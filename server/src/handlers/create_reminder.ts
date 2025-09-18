@@ -1,14 +1,23 @@
+import { db } from '../db';
+import { remindersTable } from '../db/schema';
 import { type CreateReminderInput, type Reminder } from '../schema';
 
 export const createReminder = async (input: CreateReminderInput): Promise<Reminder> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating a scheduled reminder for a task with specified method and timing.
-    return Promise.resolve({
-        id: 'placeholder-uuid',
+  try {
+    // Insert reminder record
+    const result = await db.insert(remindersTable)
+      .values({
         task_id: input.task_id,
         remind_at: input.remind_at,
         method: input.method,
-        status: input.status || 'scheduled',
-        created_at: new Date()
-    } as Reminder);
+        status: input.status || 'scheduled' // Use default if not provided
+      })
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Reminder creation failed:', error);
+    throw error;
+  }
 };

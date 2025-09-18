@@ -1,19 +1,52 @@
+import { db } from '../db';
+import { tasksTable } from '../db/schema';
+import { eq } from 'drizzle-orm';
 import { type UpdateTaskInput, type Task } from '../schema';
 
 export const updateTask = async (input: UpdateTaskInput): Promise<Task> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is updating task fields like status, priority, due_at for task management.
-    return Promise.resolve({
-        id: input.id,
-        workspace_id: 'placeholder-workspace-id',
-        title: input.title || 'placeholder-title',
-        description: input.description || null,
-        status: input.status || 'todo',
-        priority: input.priority || 'med',
-        due_at: input.due_at || null,
-        assignee_id: input.assignee_id || 'placeholder-user-id',
-        linked_note_id: input.linked_note_id || null,
-        created_at: new Date(),
-        updated_at: new Date()
-    } as Task);
+  try {
+    // Build update data, only including defined fields
+    const updateData: any = {};
+    
+    if (input.title !== undefined) {
+      updateData.title = input.title;
+    }
+    if (input.description !== undefined) {
+      updateData.description = input.description;
+    }
+    if (input.status !== undefined) {
+      updateData.status = input.status;
+    }
+    if (input.priority !== undefined) {
+      updateData.priority = input.priority;
+    }
+    if (input.due_at !== undefined) {
+      updateData.due_at = input.due_at;
+    }
+    if (input.assignee_id !== undefined) {
+      updateData.assignee_id = input.assignee_id;
+    }
+    if (input.linked_note_id !== undefined) {
+      updateData.linked_note_id = input.linked_note_id;
+    }
+
+    // Always update the updated_at timestamp
+    updateData.updated_at = new Date();
+
+    // Update the task record
+    const result = await db.update(tasksTable)
+      .set(updateData)
+      .where(eq(tasksTable.id, input.id))
+      .returning()
+      .execute();
+
+    if (result.length === 0) {
+      throw new Error(`Task with id ${input.id} not found`);
+    }
+
+    return result[0];
+  } catch (error) {
+    console.error('Task update failed:', error);
+    throw error;
+  }
 };
